@@ -1,20 +1,20 @@
 -module(etest_dist).
 
--export([start_slaves/3, start_slaves/4]).
+-export([start_slaves/4, start_slaves/5]).
 
 %
 % Installs and starts code on every known node.
 % Returns a list of started PIDs (one per node).
 %
-start_slaves(Modules, StartMod, StartArgs) ->
+start_slaves(Modules, StartMod, StartFunc, StartArgs) ->
     _World = (catch net_adm:world()),
-    start_slaves(Modules, StartMod, StartArgs, nodes(known)).
+    start_slaves(Modules, StartMod, StartFunc, StartArgs, nodes(known)).
 
 %
 % Installs and starts code on each listed node.
 % Returns a list of started PIDs (one per node).
 %
-start_slaves(Modules, StartMod, StartArgs, Nodes)
+start_slaves(Modules, StartMod, StartFunc, StartArgs, Nodes)
   when is_list(Modules), is_atom(StartMod),
        is_list(StartArgs), is_list(Nodes) ->
     % List all the nodes that aren't the current node
@@ -25,7 +25,8 @@ start_slaves(Modules, StartMod, StartArgs, Nodes)
     lists:foreach(fun(Mod) -> rload_module(Mod, Nodes) end, Modules),
 
 	% Required code is loaded, start 'em up
-	lists:map(fun(N) -> spawn_link(N, StartMod, init, StartArgs) end, Nodes).
+	lists:map(fun(N) -> spawn_link(N, StartMod, StartFunc, StartArgs) end,
+              Nodes).
 
 rload_module(Mod, Nodes) ->
     {Mod, Bin, File} = code:get_object_code(Mod),
@@ -34,4 +35,4 @@ rload_module(Mod, Nodes) ->
 
 	% Validate the multicall
 	lists:foreach(fun({module, Mod2}) -> Mod2 = Mod end, BinaryReplies),
-	error_logger:info_msg("Loaded code for %s:  ~p~n", [Mod, BinaryReplies]).
+	error_logger:info_msg("Loaded code for ~p:  ~p~n", [Mod, BinaryReplies]).
