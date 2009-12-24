@@ -3,7 +3,7 @@
 Example (using included modules):
 
     etest_dist:start_slaves([etest_sample, etest_node_sup],
-                            etest_node_sup, start_link,
+                            etest_node_sup, start_children,
                             [etest_sample, start, [2], 5]).
 
 This will use `net_adm:world()` to visit `.hosts.erlang` if possible
